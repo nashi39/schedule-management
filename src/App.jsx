@@ -1,27 +1,10 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-
-const months = [
-  "1月", "2月", "3月", "4月", "5月", "6月",
-  "7月", "8月", "9月", "10月", "11月", "12月"
-]
-const daysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31]
-const weekDays = ["日", "月", "火", "水", "木", "金", "土"]
-
-// 年リスト（1925年～2125年）
-const currentYear = 2025
-const years = Array.from({ length: 201 }, (_, i) => currentYear - 100 + i)
-
-// 各月の1日が何曜日かを計算
-function getFirstDayOfWeek(year) {
-  return Array.from({ length: 12 }, (_, m) => {
-    return new Date(year, m, 1).getDay()
-  })
-}
-
-function isLeapYear(year) {
-  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)
-}
+import CalendarGrid from './components/CalendarGrid'
+import DayModal from './components/DayModal'
+import RangeModal from './components/RangeModal'
+import { months, weekDays, currentYear, years, getFirstDayOfWeek, getDaysInMonthArray, isLeapYear } from './utils/date'
+import { useLocalStorageJson } from './hooks/useLocalStorage'
 
 function App() {
   const [selectedYear, setSelectedYear] = useState(currentYear)
@@ -29,8 +12,7 @@ function App() {
   const [modal, setModal] = useState({ open: false, day: null })
 
   // うるう年対応
-  const daysInMonthLeap = [...daysInMonth]
-  if (isLeapYear(selectedYear)) daysInMonthLeap[1] = 29
+  const daysInMonthLeap = getDaysInMonthArray(selectedYear)
 
   // 月×日ごとの予定を管理するstate（年・月ごとに管理）
   const [schedules, setSchedules] = useState({})
@@ -50,34 +32,7 @@ function App() {
   }
 
   // 詳細予定の保存（複数予定対応）
-  const [details, setDetails] = useState({})
-  const [isLoaded, setIsLoaded] = useState(false)
-
-  // 初回のみlocalStorageから読込
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('calendar-details')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (parsed && typeof parsed === 'object') {
-          setDetails(parsed)
-        }
-      }
-    } catch (e) {
-      console.warn('localStorageの値が壊れています。初期化します。', e)
-      localStorage.removeItem('calendar-details')
-      setDetails({})
-    } finally {
-      setIsLoaded(true)
-    }
-  }, [])
-
-  // detailsが変わるたびにlocalStorageへ保存（初回読込後のみ）
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('calendar-details', JSON.stringify(details))
-    }
-  }, [details, isLoaded])
+  const { value: details, setValue: setDetails } = useLocalStorageJson('calendar-details', {})
 
   // 新規入力用
   const [inputDetail, setInputDetail] = useState({ start: '', end: '', content: '' })
@@ -274,292 +229,31 @@ function App() {
         </button>
       </div>
       {/* カレンダー表示 */}
-      <div style={{ maxWidth: 700, margin: "0 auto", maxHeight: 800, overflowY: "auto" }}>
-        <table border="1" style={{ borderCollapse: 'collapse', width: '100%', fontSize: "1.2rem" }}>
-          <thead>
-            <tr>
-              {weekDays.map((wd, i) => (
-                <th
-                  key={wd}
-                  style={{
-                    background: i === 0 ? "#ffeaea" : i === 6 ? "#eaf3ff" : "#f8f8f8",
-                    color: "#000",
-                    padding: "12px 0",
-                    fontSize: "1.1rem"
-                  }}
-                >
-                  {wd}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {days.map((week, wi) => (
-              <tr key={wi}>
-                {week.map((day, di) => (
-                  <td
-                    key={di}
-                    style={{
-                      height: 90,
-                      verticalAlign: "top",
-                      background: di === 0 ? "#fff6f6" : di === 6 ? "#f6faff" : "#fff",
-                      padding: "8px",
-                      cursor: day ? "pointer" : "default"
-                    }}
-                    onClick={() => day && openModal(String(day))}
-                  >
-                    {day &&
-                      <div>
-                        <div style={{ fontWeight: "bold", color: "#000", fontSize: "1.2rem" }}>{day}</div>
-                        {/* その日の全予定を表示 */}
-                        {details[selectedYear]?.[selectedMonth]?.[String(day)]?.length > 0 &&
-                          details[selectedYear][selectedMonth][String(day)].map((d, idx) => (
-                            <div key={idx} style={{ fontSize: "0.9rem", color: "#555", marginTop: 4, borderBottom: "1px solid #eee" }}>
-                              🕒{d.start}〜{d.end} <br />
-                              {d.content}
-                            </div>
-                          ))
-                        }
-                      </div>
-                    }
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <CalendarGrid
+        days={days}
+        details={details}
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
+        onDayClick={openModal}
+      />
       {/* モーダル */}
-      {modal.open && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-          background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-        }}
-          onClick={() => setModal({ open: false, day: null })}
-        >
-          <div
-            style={{
-              background: "#fff", padding: 32, borderRadius: 12, minWidth: 340, boxShadow: "0 2px 8px #0002"
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 style={{ marginTop: 0 }}>{selectedYear}年{months[selectedMonth]}{modal.day}日の予定</h3>
-            {/* 既存の予定一覧（常に表示） */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontWeight: "bold", marginBottom: 4, color: "#000" }}>登録済みの予定</div>
-              {details[selectedYear]?.[selectedMonth]?.[modal.day]?.length > 0 ? (
-                details[selectedYear][selectedMonth][modal.day].map((d, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      border: "1px solid #eee",
-                      borderRadius: 6,
-                      padding: 8,
-                      marginBottom: 6,
-                      background: "#fafaff",
-                      color: "#000" // ここで文字色を黒に
-                    }}
-                  >
-                    <span style={{ fontWeight: "bold" }}>🕒{d.start}〜{d.end}</span><br />
-                    <span>{d.content}</span>
-                    <button
-                      onClick={() => handleDetailDelete(selectedYear, selectedMonth, modal.day, idx)}
-                      style={{
-                        marginLeft: 12,
-                        color: "#fff",
-                        background: "#e55",
-                        border: "none",
-                        borderRadius: 4,
-                        padding: "2px 8px",
-                        cursor: "pointer",
-                        fontSize: "0.95rem"
-                      }}
-                    >削除</button>
-                  </div>
-                ))
-              ) : (
-                <div style={{ color: "#888" }}>予定はありません</div>
-              )}
-            </div>
-            {/* 新規追加欄 */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ marginBottom: 8, fontWeight: "bold", color: "#000" }}>
-                開始時刻・終了時刻を設定してください
-              </div>
-              <label style={{ display: "inline-block", width: "90px" }}>
-                開始時刻：
-                <input
-                  type="time"
-                  value={inputDetail.start}
-                  onChange={e => setInputDetail(detail => ({ ...detail, start: e.target.value }))}
-                  style={{ fontSize: "1.1rem", marginLeft: 8, marginRight: 16 }}
-                />
-              </label>
-              <label style={{ display: "inline-block", width: "90px" }}>
-                終了時刻：
-                <input
-                  type="time"
-                  value={inputDetail.end}
-                  onChange={e => setInputDetail(detail => ({ ...detail, end: e.target.value }))}
-                  style={{ fontSize: "1.1rem", marginLeft: 8 }}
-                />
-              </label>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label>
-                予定：
-                <input
-                  type="text"
-                  value={inputDetail.content}
-                  onChange={e => setInputDetail(detail => ({ ...detail, content: e.target.value }))}
-                  style={{ fontSize: "1.1rem", marginLeft: 8, width: "80%" }}
-                  placeholder="例：会議、通院 など"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={e => {
-                  e.preventDefault();
-                  handleDetailAdd(
-                    selectedYear,
-                    selectedMonth,
-                    modal.day,
-                    inputDetail.start,
-                    inputDetail.end,
-                    inputDetail.content
-                  );
-                }}
-                style={{ fontSize: "1.1rem", padding: "6px 16px", background: "#4caf50", color: "#fff", border: "none", borderRadius: 6, marginLeft: 12 }}
-              >
-                追加
-              </button>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <button
-                onClick={handleDetailSaveAndClose}
-                style={{ fontSize: "1.1rem", padding: "6px 16px", marginRight: 12 }}
-              >保存</button>
-              <button
-                onClick={() => setModal({ open: false, day: null })}
-                style={{ fontSize: "1.1rem", padding: "6px 16px" }}
-              >閉じる</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DayModal
+        open={modal.open}
+        onClose={() => setModal({ open: false, day: null })}
+        title={`${selectedYear}年${months[selectedMonth]}${modal.day}日の予定`}
+        items={details[selectedYear]?.[selectedMonth]?.[modal.day] || []}
+        onDelete={(idx) => handleDetailDelete(selectedYear, selectedMonth, modal.day, idx)}
+      />
       {/* 複数日一括追加モーダル */}
-      {rangeModal && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-          background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-        }}
-          onClick={() => setRangeModal(false)}
-        >
-          <div
-            style={{
-              background: "#fff", padding: 32, borderRadius: 12, minWidth: 380, boxShadow: "0 2px 8px #0002"
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 style={{ marginTop: 0 }}>{selectedYear}年の予定を追加</h3>
-
-            <div style={{ marginBottom: 12, fontWeight: "bold", color: "#000" }}>期間</div>
-            <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
-              <div>
-                <label>開始：</label>
-                <select
-                  value={rangeInput.startMonth}
-                  onChange={e => {
-                    const m = Number(e.target.value)
-                    setRangeInput(v => ({ ...v, startMonth: m, startDay: Math.min(v.startDay, getDaysIn(m)) }))
-                  }}
-                  style={{ marginLeft: 6, marginRight: 6 }}
-                >
-                  {months.map((m, i) => <option key={m} value={i + 1}>{i + 1}月</option>)}
-                </select>
-                <select
-                  value={rangeInput.startDay}
-                  onChange={e => setRangeInput(v => ({ ...v, startDay: Number(e.target.value) }))}
-                >
-                  {Array.from({ length: getDaysIn(rangeInput.startMonth) }, (_, i) => i + 1).map(d =>
-                    <option key={d} value={d}>{d}日</option>
-                  )}
-                </select>
-              </div>
-
-              <div>〜</div>
-
-              <div>
-                <label>終了：</label>
-                <select
-                  value={rangeInput.endMonth}
-                  onChange={e => {
-                    const m = Number(e.target.value)
-                    setRangeInput(v => ({ ...v, endMonth: m, endDay: Math.min(v.endDay, getDaysIn(m)) }))
-                  }}
-                  style={{ marginLeft: 6, marginRight: 6 }}
-                >
-                  {months.map((m, i) => <option key={m} value={i + 1}>{i + 1}月</option>)}
-                </select>
-                <select
-                  value={rangeInput.endDay}
-                  onChange={e => setRangeInput(v => ({ ...v, endDay: Number(e.target.value) }))}
-                >
-                  {Array.from({ length: getDaysIn(rangeInput.endMonth) }, (_, i) => i + 1).map(d =>
-                    <option key={d} value={d}>{d}日</option>
-                  )}
-                </select>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ marginBottom: 8, fontWeight: "bold", color: "#000" }}>時刻</div>
-              <label style={{ display: "inline-block", width: "90px" }}>
-                開始時刻：
-                <input
-                  type="time"
-                  value={rangeInput.start}
-                  onChange={e => setRangeInput(v => ({ ...v, start: e.target.value }))}
-                  style={{ fontSize: "1.1rem", marginLeft: 8, marginRight: 16 }}
-                />
-              </label>
-              <label style={{ display: "inline-block", width: "90px" }}>
-                終了時刻：
-                <input
-                  type="time"
-                  value={rangeInput.end}
-                  onChange={e => setRangeInput(v => ({ ...v, end: e.target.value }))}
-                  style={{ fontSize: "1.1rem", marginLeft: 8 }}
-                />
-              </label>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label>
-                予定：
-                <input
-                  type="text"
-                  value={rangeInput.content}
-                  onChange={e => setRangeInput(v => ({ ...v, content: e.target.value }))}
-                  style={{ fontSize: "1.1rem", marginLeft: 8, width: "80%" }}
-                  placeholder="例：出張、入院 など"
-                />
-              </label>
-            </div>
-
-            <div style={{ textAlign: "right" }}>
-              <button
-                onClick={handleRangeAdd}
-                style={{ fontSize: "1.1rem", padding: "6px 16px", background: "#4caf50", color: "#fff", border: "none", borderRadius: 6, marginRight: 8 }}
-              >追加</button>
-              <button
-                onClick={() => setRangeModal(false)}
-                style={{ fontSize: "1.1rem", padding: "6px 16px" }}
-              >閉じる</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RangeModal
+        open={rangeModal}
+        onClose={() => setRangeModal(false)}
+        value={rangeInput}
+        setValue={setRangeInput}
+        getDaysIn={(m) => daysInMonthLeap[m - 1]}
+        onSubmit={handleRangeAdd}
+        year={selectedYear}
+      />
     </>
   )
 }
