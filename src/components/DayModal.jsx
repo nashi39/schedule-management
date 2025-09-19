@@ -1,4 +1,4 @@
-export default function DayModal({ open, onClose, title, items, onDelete }) {
+export default function DayModal({ open, onClose, title, items, onDelete, allowAdd = false, inputValue, onInputChange, onAdd }) {
   if (!open) return null
   return (
     <div style={{
@@ -50,6 +50,48 @@ export default function DayModal({ open, onClose, title, items, onDelete }) {
             <div style={{ color: "#888" }}>予定はありません</div>
           )}
         </div>
+        {allowAdd && (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 8, fontWeight: "bold", color: "#000" }}>新規予定を追加</div>
+              <label style={{ display: "inline-block", width: "90px" }}>
+                開始時刻：
+                <input
+                  type="time"
+                  value={inputValue?.start || ''}
+                  onChange={e => onInputChange({ ...inputValue, start: e.target.value })}
+                  style={{ fontSize: "1.1rem", marginLeft: 8, marginRight: 16 }}
+                />
+              </label>
+              <label style={{ display: "inline-block", width: "90px" }}>
+                終了時刻：
+                <input
+                  type="time"
+                  value={inputValue?.end || ''}
+                  onChange={e => onInputChange({ ...inputValue, end: e.target.value })}
+                  style={{ fontSize: "1.1rem", marginLeft: 8 }}
+                />
+              </label>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label>
+                予定：
+                <input
+                  type="text"
+                  value={inputValue?.content || ''}
+                  onChange={e => onInputChange({ ...inputValue, content: e.target.value })}
+                  style={{ fontSize: "1.1rem", marginLeft: 8, width: "80%" }}
+                  placeholder="例：会議、通院 など"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={onAdd}
+                style={{ fontSize: "1.1rem", padding: "6px 16px", background: "#4caf50", color: "#fff", border: "none", borderRadius: 6, marginLeft: 12 }}
+              >追加</button>
+            </div>
+          </>
+        )}
         <div style={{ textAlign: "right" }}>
           <button
             onClick={onClose}

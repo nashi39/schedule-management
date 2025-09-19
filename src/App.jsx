@@ -7,8 +7,14 @@ import { months, weekDays, currentYear, years, getFirstDayOfWeek, getDaysInMonth
 import { useLocalStorageJson } from './hooks/useLocalStorage'
 
 function App() {
-  const [selectedYear, setSelectedYear] = useState(currentYear)
-  const [selectedMonth, setSelectedMonth] = useState(0)
+  // 今日の日付を取得
+  const today = new Date()
+  const todayYear = today.getFullYear()
+  const todayMonth = today.getMonth() // 0-based
+  const todayDay = today.getDate()
+  
+  const [selectedYear, setSelectedYear] = useState(todayYear)
+  const [selectedMonth, setSelectedMonth] = useState(todayMonth)
   const [modal, setModal] = useState({ open: false, day: null })
 
   // うるう年対応
@@ -186,6 +192,9 @@ function App() {
           ))}
         </select>
         <h2 style={{ margin: 0, fontSize: "2rem" }}>{months[selectedMonth]}カレンダー</h2>
+        <div style={{ marginLeft: 'auto', fontSize: "1.1rem", color: "#fff" }}>
+          今日: {todayYear}年{months[todayMonth]}{todayDay}日
+        </div>
       </div>
       {/* 月選択タブ */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
@@ -243,6 +252,17 @@ function App() {
         title={`${selectedYear}年${months[selectedMonth]}${modal.day}日の予定`}
         items={details[selectedYear]?.[selectedMonth]?.[modal.day] || []}
         onDelete={(idx) => handleDetailDelete(selectedYear, selectedMonth, modal.day, idx)}
+        allowAdd={true}
+        inputValue={inputDetail}
+        onInputChange={setInputDetail}
+        onAdd={() => handleDetailAdd(
+          selectedYear,
+          selectedMonth,
+          modal.day,
+          inputDetail.start,
+          inputDetail.end,
+          inputDetail.content
+        )}
       />
       {/* 複数日一括追加モーダル */}
       <RangeModal
