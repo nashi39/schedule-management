@@ -3,8 +3,10 @@ import './App.css'
 import CalendarGrid from './components/CalendarGrid'
 import DayModal from './components/DayModal'
 import RangeModal from './components/RangeModal'
-import { months, weekDays, currentYear, years, getFirstDayOfWeek, getDaysInMonthArray, isLeapYear } from './utils/date'
+import NotificationSettings from './components/NotificationSettings'
+import { months, years, getFirstDayOfWeek, getDaysInMonthArray } from './utils/date'
 import { useLocalStorageJson } from './hooks/useLocalStorage'
+import { useNotification } from './hooks/useNotification'
 
 function App() {
   // 今日の日付を取得
@@ -20,25 +22,51 @@ function App() {
   // うるう年対応
   const daysInMonthLeap = getDaysInMonthArray(selectedYear)
 
-  // 月×日ごとの予定を管理するstate（年・月ごとに管理）
-  const [schedules, setSchedules] = useState({})
-
-  // 入力変更時のハンドラ
-  const handleChange = (year, monthIdx, dayIdx, value) => {
-    setSchedules(prev => {
-      const newSchedules = { ...prev }
-      if (!newSchedules[year]) newSchedules[year] = Array.from({ length: 12 }, (_, m) => Array.from({ length: daysInMonthLeap[m] }, () => ""))
-      // 月の日数が変わる場合（2月のうるう年など）に対応
-      if (newSchedules[year][monthIdx].length !== daysInMonthLeap[monthIdx]) {
-        newSchedules[year][monthIdx] = Array.from({ length: daysInMonthLeap[monthIdx] }, (_, i) => newSchedules[year][monthIdx][i] || "")
-      }
-      newSchedules[year][monthIdx][dayIdx] = value
-      return newSchedules
-    })
-  }
-
   // 詳細予定の保存（複数予定対応）
   const { value: details, setValue: setDetails } = useLocalStorageJson('calendar-details', {})
+  
+  // 通知機能
+  const { 
+    permission, 
+    isEnabled, 
+    setIsEnabled, 
+    requestPermission, 
+    scheduleNotification, 
+    cancelNotification 
+  } = useNotification()
+  
+  // 通知設定をlocalStorageに保存
+  const { value: notificationSettings, setValue: setNotificationSettings } = useLocalStorageJson('notification-settings', { enabled: false })
+  
+  // 通知設定の同期
+  useEffect(() => {
+    setIsEnabled(notificationSettings.enabled)
+  }, [notificationSettings.enabled, setIsEnabled])
+  
+  // Service Worker登録
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('Service Worker registered successfully:', registration)
+        })
+        .catch((error) => {
+          console.log('Service Worker registration failed:', error)
+        })
+    }
+  }, [])
+
+  // 通知設定の保存
+  const handleNotificationToggle = async (enabled) => {
+    if (enabled) {
+      const granted = await requestPermission()
+      if (granted) {
+        setNotificationSettings({ enabled: true })
+      }
+    } else {
+      setNotificationSettings({ enabled: false })
+    }
+  }
 
   // 新規入力用
   const [inputDetail, setInputDetail] = useState({ start: '', end: '', content: '' })
@@ -90,6 +118,9 @@ function App() {
           ...newDetails[selectedYear][m][dayKey],
           { start, end, content }
         ]
+        
+        // 各日に通知を設定
+        scheduleNotification(selectedYear, m, dayKey, start, content)
       }
       return newDetails
     })
@@ -128,6 +159,10 @@ function App() {
       ]
       return newDetails
     })
+    
+    // 通知を設定
+    scheduleNotification(year, month, day, start, content)
+    
     setInputDetail({ start: '', end: '', content: '' }) // 入力欄リセット
   }
 
@@ -135,6 +170,9 @@ function App() {
   const handleDetailDelete = (year, month, day, idx) => {
     setDetails(prev => {
       const newDetails = { ...prev }
+      // 削除する予定の情報を取得
+      const deletedItem = newDetails[year]?.[month]?.[String(day)]?.[idx]
+      
       // 予定削除
       if (
         newDetails[year] &&
@@ -143,14 +181,14 @@ function App() {
       ) {
         newDetails[year][month][String(day)] = newDetails[year][month][String(day)].filter((_, i) => i !== idx)
       }
+      
+      // 通知をキャンセル
+      if (deletedItem) {
+        cancelNotification(year, month, day, deletedItem.start, deletedItem.content)
+      }
+      
       return newDetails
     })
-  }
-
-  // 保存ボタン（モーダルを閉じるだけ）
-  const handleDetailSaveAndClose = () => {
-    setModal({ open: false, day: null })
-    setInputDetail({ start: '', end: '', content: '' })
   }
 
   // カレンダー配列生成
@@ -172,17 +210,6 @@ function App() {
     days.push(week)
   }
 
-  // 選択中の予定データ
-  const currentSchedules =
-    schedules[selectedYear]?.[selectedMonth] ||
-    Array.from({ length: daysInMonthLeap[selectedMonth] }, () => "")
-
-  // モーダル用の値
-  const detailValue =
-    modal.open && details[selectedYear]?.[selectedMonth]?.[modal.day]
-      ? details[selectedYear][selectedMonth][modal.day]
-      : []
-
   return (
     <>
       <div style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 24, fontSize: "1.5rem" }}>
@@ -196,6 +223,15 @@ function App() {
           今日: {todayYear}年{months[todayMonth]}{todayDay}日
         </div>
       </div>
+      
+      {/* 通知設定 */}
+      <NotificationSettings
+        permission={permission}
+        isEnabled={isEnabled}
+        setIsEnabled={handleNotificationToggle}
+        requestPermission={requestPermission}
+      />
+      
       {/* 月選択タブ */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
         {months.map((month, idx) => (

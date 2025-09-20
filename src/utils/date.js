@@ -7,11 +7,11 @@ export const weekDays = ["日", "月", "火", "水", "木", "金", "土"]
 
 const baseDaysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31]
 
-export function isLeapYear(year) {
+function isLeapYear(year) {
   return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)
 }
 
-export function getDaysInMonth(year, monthIndex0) {
+function getDaysInMonth(year, monthIndex0) {
   if (monthIndex0 === 1) {
     return isLeapYear(year) ? 29 : 28
   }
