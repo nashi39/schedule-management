@@ -56,15 +56,23 @@ export function useNotification() {
 
   // 予定の通知を設定
   const scheduleNotification = (year, month, day, startTime, content) => {
-    if (!isEnabled) return
+    if (!isEnabled) {
+      console.log('通知が無効です')
+      return
+    }
 
     const now = new Date()
     const targetDate = new Date(year, month, day)
     const [hours, minutes] = startTime.split(':').map(Number)
     targetDate.setHours(hours, minutes, 0, 0)
 
+    console.log('通知設定:', { year, month, day, startTime, content, targetDate, now })
+
     // 過去の予定は通知しない
-    if (targetDate <= now) return
+    if (targetDate <= now) {
+      console.log('過去の予定のため通知をスキップ')
+      return
+    }
 
     const notificationId = `${year}-${month}-${day}-${startTime}-${content}`
 
@@ -73,63 +81,49 @@ export function useNotification() {
       clearTimeout(timersRef.current.get(notificationId))
     }
 
-    // Service Workerが利用可能な場合はバックグラウンド通知を使用
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      // 5分前の通知
-      const fiveMinutesBefore = new Date(targetDate.getTime() - 5 * 60 * 1000)
-      if (fiveMinutesBefore > now) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'SCHEDULE_NOTIFICATION',
-          title: '予定の5分前です',
-          options: {
-            body: `${content} (${startTime})`,
-            tag: `reminder-${notificationId}`,
-            requireInteraction: true
-          },
-          delay: fiveMinutesBefore.getTime() - now.getTime()
-        })
-      }
+    // 5分前の通知（1分後にテスト用）
+    const fiveMinutesBefore = new Date(targetDate.getTime() - 5 * 60 * 1000)
+    const testTime = new Date(now.getTime() + 1 * 60 * 1000) // 1分後にテスト
+    
+    console.log('通知タイマー設定:', { fiveMinutesBefore, testTime })
 
-      // 予定時間の通知
-      navigator.serviceWorker.controller.postMessage({
-        type: 'SCHEDULE_NOTIFICATION',
-        title: '予定の時間です',
-        options: {
-          body: `${content} (${startTime})`,
-          tag: `start-${notificationId}`,
-          requireInteraction: true
-        },
-        delay: targetDate.getTime() - now.getTime()
+    // テスト用: 1分後に通知
+    const testTimer = setTimeout(() => {
+      console.log('テスト通知を送信')
+      sendNotification('テスト通知', {
+        body: `${content} (${startTime})`,
+        tag: `test-${notificationId}`
       })
-    } else {
-      // フォールバック: 通常のタイマー通知
-      // 5分前の通知
-      const fiveMinutesBefore = new Date(targetDate.getTime() - 5 * 60 * 1000)
-      if (fiveMinutesBefore > now) {
-        const timer1 = setTimeout(() => {
-          sendNotification(
-            '予定の5分前です',
-            {
-              body: `${content} (${startTime})`,
-              tag: `reminder-${notificationId}`
-            }
-          )
-        }, fiveMinutesBefore.getTime() - now.getTime())
-        timersRef.current.set(`${notificationId}-5min`, timer1)
-      }
+    }, 1 * 60 * 1000) // 1分後
+    timersRef.current.set(`${notificationId}-test`, testTimer)
 
-      // 予定時間の通知
-      const timer2 = setTimeout(() => {
+    // 5分前の通知
+    if (fiveMinutesBefore > now) {
+      const timer1 = setTimeout(() => {
+        console.log('5分前通知を送信')
         sendNotification(
-          '予定の時間です',
+          '予定の5分前です',
           {
             body: `${content} (${startTime})`,
-            tag: `start-${notificationId}`
+            tag: `reminder-${notificationId}`
           }
         )
-      }, targetDate.getTime() - now.getTime())
-      timersRef.current.set(`${notificationId}-start`, timer2)
+      }, fiveMinutesBefore.getTime() - now.getTime())
+      timersRef.current.set(`${notificationId}-5min`, timer1)
     }
+
+    // 予定時間の通知
+    const timer2 = setTimeout(() => {
+      console.log('予定時間通知を送信')
+      sendNotification(
+        '予定の時間です',
+        {
+          body: `${content} (${startTime})`,
+          tag: `start-${notificationId}`
+        }
+      )
+    }, targetDate.getTime() - now.getTime())
+    timersRef.current.set(`${notificationId}-start`, timer2)
   }
 
   // 通知をキャンセル
