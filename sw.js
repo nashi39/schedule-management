@@ -4,6 +4,7 @@ const CACHE_NAME = 'schedule-manager-v1'
 // Install event
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...')
+  // すぐに新しいSWを有効にして、古いSWを置き換える
   self.skipWaiting()
 })
 
