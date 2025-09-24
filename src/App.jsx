@@ -43,17 +43,25 @@ function App() {
     setIsEnabled(notificationSettings.enabled)
   }, [notificationSettings.enabled, setIsEnabled])
   
-  // Service Worker登録
+  // Service Worker登録（最新に自動更新・不整合時は再読み込み）
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered successfully:', registration)
+    if (!('serviceWorker' in navigator)) return
+    const swUrl = '/sw.js'
+    let didReload = false
+    navigator.serviceWorker.register(swUrl, { scope: '/' })
+      .then(reg => {
+        // デプロイ直後に古いSWが残っていると白画面になることがあるため、積極的に更新
+        try { reg.update() } catch {}
+        // 新しいSWが有効化されたら一度だけリロード
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (didReload) return
+          didReload = true
+          window.location.reload()
         })
-        .catch((error) => {
-          console.log('Service Worker registration failed:', error)
-        })
-    }
+      })
+      .catch(err => {
+        console.log('Service Worker registration failed:', err)
+      })
   }, [])
 
   // 通知設定の保存

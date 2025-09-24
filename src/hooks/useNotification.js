@@ -29,8 +29,8 @@ export function useNotification() {
         type: 'SCHEDULE_NOTIFICATION',
         title,
         options: {
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
+          icon: './favicon.ico',
+          badge: './favicon.ico',
           ...options
         },
         delay: 0
@@ -38,8 +38,8 @@ export function useNotification() {
     } else {
       // フォールバック: 通常の通知
       const notification = new Notification(title, {
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
+        icon: './favicon.ico',
+        badge: './favicon.ico',
         ...options
       })
 
