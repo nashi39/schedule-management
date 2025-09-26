@@ -248,44 +248,25 @@ function App() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      backgroundColor: '#242424',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      WebkitBackground: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      backgroundColor: '#667eea',
       padding: '1rem',
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexDirection: 'column',
-      WebkitDisplay: 'flex',
-      WebkitFlexDirection: 'column'
+      boxSizing: 'border-box'
     }}>
       <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        gap: 16, 
-        alignItems: 'center', 
+        textAlign: 'center',
         marginBottom: 24, 
-        fontSize: "1.5rem",
-        WebkitDisplay: 'flex',
-        WebkitFlexDirection: 'column',
-        WebkitAlignItems: 'center'
+        fontSize: "1.5rem"
       }}>
         <div style={{ 
-          display: 'flex', 
-          gap: 16, 
-          alignItems: 'center', 
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          WebkitDisplay: 'flex',
-          WebkitAlignItems: 'center',
-          WebkitFlexWrap: 'wrap',
-          WebkitJustifyContent: 'center'
+          textAlign: 'center',
+          marginBottom: 16
         }}>
-          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ fontSize: "1.2rem", padding: "6px 12px" }}>
+          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ fontSize: "1.2rem", padding: "6px 12px", marginRight: 16 }}>
             {years.map(y => (
               <option key={y} value={y}>{y}年</option>
             ))}
           </select>
-          <h2 style={{ margin: 0, fontSize: "2rem" }}>{months[selectedMonth]}カレンダー</h2>
+          <h2 style={{ margin: 0, fontSize: "2rem", display: 'inline-block' }}>{months[selectedMonth]}カレンダー</h2>
         </div>
         <div style={{ 
           fontSize: "1.1rem", 
