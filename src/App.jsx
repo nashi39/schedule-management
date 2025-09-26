@@ -46,8 +46,11 @@ function App() {
   // Service Worker登録（最新に自動更新・不整合時は再読み込み）
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
-    const swUrl = './sw.js' // Vercel用に相対パスに変更
+    
+    // Safari対応: より安全なパス設定
+    const swUrl = window.location.origin + '/sw.js'
     let didReload = false
+    
     navigator.serviceWorker.register(swUrl, { scope: '/' })
       .then(reg => {
         console.log('Service Worker registered successfully:', reg)
@@ -62,6 +65,7 @@ function App() {
       })
       .catch(err => {
         console.log('Service Worker registration failed:', err)
+        // SafariでService Workerが失敗してもアプリは動作するようにする
       })
   }, [])
 
@@ -244,13 +248,15 @@ function App() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: '#242424',
-      backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      WebkitBackgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      backgroundColor: '#242424',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      WebkitBackground: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: '1rem',
       boxSizing: 'border-box',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      WebkitDisplay: 'flex',
+      WebkitFlexDirection: 'column'
     }}>
       <div style={{ 
         display: 'flex', 

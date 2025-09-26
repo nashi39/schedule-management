@@ -28,6 +28,7 @@ body {
   background-color: #242424;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 #root {
@@ -35,6 +36,8 @@ body {
   width: 100%;
   box-sizing: border-box;
   background-color: #242424;
+  position: relative;
+  z-index: 1;
 }
 
 h1 {
