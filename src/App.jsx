@@ -248,9 +248,10 @@ function App() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      backgroundColor: '#667eea',
+      backgroundColor: '#000',
       padding: '1rem',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      color: '#fff'
     }}>
       <div style={{ 
         textAlign: 'center',
