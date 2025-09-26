@@ -16,10 +16,15 @@ self.addEventListener('activate', (event) => {
 
 // Background notification handling
 self.addEventListener('message', (event) => {
+  console.log('Service Worker received message:', event.data)
+  
   if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
     const { title, options, delay } = event.data
     
+    console.log('Scheduling notification:', { title, options, delay })
+    
     setTimeout(() => {
+      console.log('Showing notification:', title)
       self.registration.showNotification(title, {
         ...options,
         requireInteraction: true, // ユーザーが操作するまで表示
@@ -33,6 +38,10 @@ self.addEventListener('message', (event) => {
             title: '閉じる'
           }
         ]
+      }).then(() => {
+        console.log('Notification shown successfully')
+      }).catch(err => {
+        console.error('Failed to show notification:', err)
       })
     }, delay)
   }
