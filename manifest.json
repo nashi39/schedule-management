@@ -4,8 +4,8 @@
   "description": "予定管理と通知機能付きカレンダーアプリ",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#242424",
-  "theme_color": "#6970fc",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait",
   "icons": [
     {
