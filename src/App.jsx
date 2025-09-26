@@ -242,15 +242,38 @@ function App() {
   }
 
   return (
-    <>
-      <div style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 24, fontSize: "1.5rem" }}>
-        <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ fontSize: "1.2rem", padding: "6px 12px" }}>
-          {years.map(y => (
-            <option key={y} value={y}>{y}年</option>
-          ))}
-        </select>
-        <h2 style={{ margin: 0, fontSize: "2rem" }}>{months[selectedMonth]}カレンダー</h2>
-        <div style={{ marginLeft: 'auto', fontSize: "1.1rem", color: "#fff" }}>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: '1rem',
+      boxSizing: 'border-box'
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        gap: 16, 
+        alignItems: 'center', 
+        marginBottom: 24, 
+        fontSize: "1.5rem"
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: 16, 
+          alignItems: 'center', 
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }}>
+          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ fontSize: "1.2rem", padding: "6px 12px" }}>
+            {years.map(y => (
+              <option key={y} value={y}>{y}年</option>
+            ))}
+          </select>
+          <h2 style={{ margin: 0, fontSize: "2rem" }}>{months[selectedMonth]}カレンダー</h2>
+        </div>
+        <div style={{ 
+          fontSize: "1.1rem", 
+          color: "#fff" 
+        }}>
           今日: {todayYear}年{months[todayMonth]}{todayDay}日
         </div>
       </div>
@@ -341,7 +364,7 @@ function App() {
         onSubmit={handleRangeAdd}
         year={selectedYear}
       />
-    </>
+    </div>
   )
 }
 
