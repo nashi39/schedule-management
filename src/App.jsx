@@ -244,9 +244,13 @@ function App() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: '#242424',
+      backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      WebkitBackgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: '1rem',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       <div style={{ 
         display: 'flex', 
@@ -254,14 +258,21 @@ function App() {
         gap: 16, 
         alignItems: 'center', 
         marginBottom: 24, 
-        fontSize: "1.5rem"
+        fontSize: "1.5rem",
+        WebkitDisplay: 'flex',
+        WebkitFlexDirection: 'column',
+        WebkitAlignItems: 'center'
       }}>
         <div style={{ 
           display: 'flex', 
           gap: 16, 
           alignItems: 'center', 
           flexWrap: 'wrap',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          WebkitDisplay: 'flex',
+          WebkitAlignItems: 'center',
+          WebkitFlexWrap: 'wrap',
+          WebkitJustifyContent: 'center'
         }}>
           <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ fontSize: "1.2rem", padding: "6px 12px" }}>
             {years.map(y => (
