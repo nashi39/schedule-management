@@ -46,10 +46,11 @@ function App() {
   // Service Worker登録（最新に自動更新・不整合時は再読み込み）
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
-    const swUrl = '/sw.js'
+    const swUrl = './sw.js' // Vercel用に相対パスに変更
     let didReload = false
     navigator.serviceWorker.register(swUrl, { scope: '/' })
       .then(reg => {
+        console.log('Service Worker registered successfully:', reg)
         // デプロイ直後に古いSWが残っていると白画面になることがあるため、積極的に更新
         try { reg.update() } catch {}
         // 新しいSWが有効化されたら一度だけリロード
@@ -63,6 +64,28 @@ function App() {
         console.log('Service Worker registration failed:', err)
       })
   }, [])
+
+  // アプリ起動時に通知許可を自動要求
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      if ('Notification' in window) {
+        console.log('Initial notification permission:', Notification.permission)
+        if (Notification.permission === 'default') {
+          console.log('Requesting notification permission on app start')
+          const granted = await requestPermission()
+          if (granted) {
+            console.log('Notification permission granted on startup')
+            setNotificationSettings({ enabled: true })
+          }
+        } else if (Notification.permission === 'granted') {
+          console.log('Notification permission already granted')
+          setNotificationSettings({ enabled: true })
+        }
+      }
+    }
+    
+    initializeNotifications()
+  }, [requestPermission, setNotificationSettings])
 
   // 通知設定の保存
   const handleNotificationToggle = async (enabled) => {

@@ -21,25 +21,34 @@ export function useNotification() {
 
   // 通知を送信（Service Worker経由）
   const sendNotification = (title, options = {}) => {
-    if (permission !== 'granted' || !isEnabled) return
+    console.log('sendNotification called:', { title, options, permission, isEnabled })
+    
+    if (permission !== 'granted' || !isEnabled) {
+      console.log('Notification not sent: permission or enabled check failed')
+      return
+    }
 
     // Service Workerが利用可能な場合はそちらを使用
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      console.log('Sending notification via Service Worker')
       navigator.serviceWorker.controller.postMessage({
         type: 'SCHEDULE_NOTIFICATION',
         title,
         options: {
           icon: './favicon.ico',
           badge: './favicon.ico',
+          requireInteraction: true,
           ...options
         },
         delay: 0
       })
     } else {
+      console.log('Sending notification via direct API')
       // フォールバック: 通常の通知
       const notification = new Notification(title, {
         icon: './favicon.ico',
         badge: './favicon.ico',
+        requireInteraction: true,
         ...options
       })
 
@@ -49,8 +58,8 @@ export function useNotification() {
         notification.close()
       }
 
-      // 5秒後に自動で閉じる
-      setTimeout(() => notification.close(), 5000)
+      // 10秒後に自動で閉じる（長めに設定）
+      setTimeout(() => notification.close(), 10000)
     }
   }
 
@@ -87,14 +96,15 @@ export function useNotification() {
     
     console.log('通知タイマー設定:', { fiveMinutesBefore, testTime })
 
-    // テスト用: 1分後に通知
+    // テスト用: 30秒後に通知（デバッグ用）
     const testTimer = setTimeout(() => {
       console.log('テスト通知を送信')
-      sendNotification('テスト通知', {
-        body: `${content} (${startTime})`,
-        tag: `test-${notificationId}`
+      sendNotification('🔔 通知テスト', {
+        body: `${content} (${startTime}) - 通知機能が正常に動作しています`,
+        tag: `test-${notificationId}`,
+        data: { type: 'test', content, startTime }
       })
-    }, 1 * 60 * 1000) // 1分後
+    }, 30 * 1000) // 30秒後
     timersRef.current.set(`${notificationId}-test`, testTimer)
 
     // 5分前の通知

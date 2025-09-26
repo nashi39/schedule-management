@@ -135,7 +135,8 @@ export default function NotificationSettings({
         <strong>📋 通知の仕様：</strong><br />
         • 予定の5分前と予定時間に通知されます<br />
         • ブラウザを閉じていても通知が届きます<br />
-        • 通知をクリックするとアプリが開きます
+        • 通知をクリックするとアプリが開きます<br />
+        • 新規予定追加時に30秒後にテスト通知が送信されます
       </div>
     </div>
   )
