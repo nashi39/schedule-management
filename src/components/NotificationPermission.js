@@ -21,7 +21,7 @@ const NotificationPermission = () => {
   }, []);
 
   const requestPermission = async () => {
-    if (!isSupported || !('Notification' in window)) return;
+    if (!isSupported || !('Notification' in window) || !(window.isSecureContext || window.location.hostname === 'localhost')) return;
 
     try {
       const result = await Notification.requestPermission();
@@ -47,6 +47,8 @@ const NotificationPermission = () => {
     setPermission('denied');
   };
 
+  const isSecure = (typeof window !== 'undefined') && (window.isSecureContext || window.location.hostname === 'localhost');
+
   if (!isSupported) {
     return (
       <div className="notification-status denied">
@@ -64,6 +66,15 @@ const NotificationPermission = () => {
         <button onClick={disableNotifications} className="disable-btn">
           <BellOff size={14} />
         </button>
+      </div>
+    );
+  }
+
+  if (!isSecure) {
+    return (
+      <div className="notification-status denied">
+        <BellOff size={16} />
+        <span>通知はHTTPSまたはlocalhostでのみ有効です</span>
       </div>
     );
   }

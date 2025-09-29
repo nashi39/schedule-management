@@ -11,8 +11,8 @@ root.render(
   </React.StrictMode>
 );
 
-// Service Worker登録
-if ('serviceWorker' in navigator) {
+// Service Worker登録（HTTPS または localhost のみ）
+if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
