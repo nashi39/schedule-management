@@ -53,7 +53,7 @@ async function showLocalNotification(title, options) {
 }
 
 async function maybeNotify(schedule, notifiedSet) {
-  const { id, title, description, date, priority, location } = schedule;
+  const { id, title, description, date, location } = schedule;
   if (!id || notifiedSet.has(id)) return;
 
   const scheduledAt = new Date(date);
