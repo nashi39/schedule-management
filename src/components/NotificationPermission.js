@@ -3,15 +3,25 @@ import { Bell, BellOff } from 'lucide-react';
 import './NotificationPermission.css';
 
 const NotificationPermission = () => {
-  const [permission, setPermission] = useState(Notification.permission);
+  const [permission, setPermission] = useState('default');
   const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
-    setIsSupported('Notification' in window);
+    const checkSupport = () => {
+      if ('Notification' in window) {
+        setIsSupported(true);
+        setPermission(Notification.permission);
+      } else {
+        setIsSupported(false);
+        setPermission('denied');
+      }
+    };
+    
+    checkSupport();
   }, []);
 
   const requestPermission = async () => {
-    if (!isSupported) return;
+    if (!isSupported || !('Notification' in window)) return;
 
     try {
       const result = await Notification.requestPermission();
@@ -19,10 +29,14 @@ const NotificationPermission = () => {
       
       if (result === 'granted') {
         // テスト通知を送信
-        new Notification('スケジュール管理アプリ', {
-          body: '通知が有効になりました！',
-          icon: '/logo192.png'
-        });
+        try {
+          new Notification('スケジュール管理アプリ', {
+            body: '通知が有効になりました！',
+            icon: '/logo192.png'
+          });
+        } catch (notificationError) {
+          console.log('通知の送信に失敗しました:', notificationError);
+        }
       }
     } catch (error) {
       console.error('通知許可の要求に失敗しました:', error);
@@ -34,7 +48,12 @@ const NotificationPermission = () => {
   };
 
   if (!isSupported) {
-    return null;
+    return (
+      <div className="notification-status denied">
+        <BellOff size={16} />
+        <span>通知はサポートされていません</span>
+      </div>
+    );
   }
 
   if (permission === 'granted') {
