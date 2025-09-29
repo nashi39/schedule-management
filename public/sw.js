@@ -10,9 +10,36 @@ const urlsToCache = [
 // インストールイベント
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      // 1) 基本ファイルをキャッシュ
+      await cache.addAll(urlsToCache);
+      // 2) asset-manifest からハッシュ付きビルド資産をプリキャッシュ
+      try {
+        const res = await fetch('/asset-manifest.json', { cache: 'no-cache' });
+        if (res.ok) {
+          const manifest = await res.json();
+          const files = new Set();
+          const addPath = (p) => {
+            if (typeof p === 'string') files.add(p);
+          };
+          // CRAのmanifest構造を考慮
+          if (manifest.files) {
+            Object.values(manifest.files).forEach(addPath);
+          }
+          if (Array.isArray(manifest.entrypoints)) {
+            manifest.entrypoints.forEach(addPath);
+          }
+          const toCache = Array.from(files)
+            .filter((p) => typeof p === 'string')
+            .map((p) => (p.startsWith('/') ? p : `/${p}`));
+          await cache.addAll(toCache);
+        }
+      } catch (e) {
+        // 取得失敗時はスキップ（初回オンラインアクセス後にランタイムキャッシュ）
+      }
+      await self.skipWaiting();
+    })()
   );
 });
 
