@@ -11,15 +11,15 @@ const Header = () => {
         <nav className="header-nav">
           <Link to="/" className="nav-link">
             <List size={20} />
-            スケジュール一覧
+            <span>スケジュール一覧</span>
           </Link>
           <Link to="/calendar" className="nav-link">
             <Calendar size={20} />
-            カレンダー
+            <span>カレンダー</span>
           </Link>
           <Link to="/add" className="nav-link">
             <Plus size={20} />
-            新規作成
+            <span>新規作成</span>
           </Link>
         </nav>
       </div>
