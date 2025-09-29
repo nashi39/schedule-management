@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Header from './components/Header';
@@ -6,8 +6,14 @@ import ScheduleList from './components/ScheduleList';
 import ScheduleForm from './components/ScheduleForm';
 import Calendar from './components/Calendar';
 import NotificationPermission from './components/NotificationPermission';
+import { startScheduleNotificationPolling } from './utils/notificationScheduler';
 
 function App() {
+  useEffect(() => {
+    const stop = startScheduleNotificationPolling();
+    return () => stop && stop();
+  }, []);
+
   return (
     <Router>
       <div className="App">
