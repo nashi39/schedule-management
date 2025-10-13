@@ -1,5 +1,5 @@
-// 簡易スケジューラ: アプリ起動中にローカルストレージの予定時刻を監視し通知を表示
-// 注意: ブラウザ/タブが閉じられている場合は動作しません（Web Pushが必要）
+// OneSignal SDKを使用したスケジューラ: Web Push通知をサポート
+import { sendNotification, checkNotificationPermission } from '../config/onesignal';
 
 const POLL_INTERVAL_MS = 30 * 1000; // 30秒ごとにチェック
 const NOTIFICATION_WINDOW_MS = 60 * 1000; // 1分以内の到達を通知
@@ -34,8 +34,25 @@ function saveNotifiedSet(set) {
   } catch {}
 }
 
-async function showLocalNotification(title, options) {
-  // Service Worker経由で表示できればそちらを優先
+async function showNotification(title, options) {
+  // OneSignal SDKを使用して通知を送信
+  try {
+    const success = await sendNotification(title, options.body, {
+      icon: options.icon,
+      badge: options.badge,
+      tag: options.tag,
+      data: options.data
+    });
+    
+    if (success) {
+      console.log('OneSignal通知送信成功:', title);
+      return;
+    }
+  } catch (error) {
+    console.error('OneSignal通知送信エラー:', error);
+  }
+  
+  // Fallback: 従来の通知方法
   try {
     if ('serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.getRegistration();
@@ -45,7 +62,8 @@ async function showLocalNotification(title, options) {
       }
     }
   } catch {}
-  // Fallback: Window Notification（タブがフォアグラウンドの時のみ）
+  
+  // 最後の手段: Window Notification（タブがフォアグラウンドの時のみ）
   try {
     // eslint-disable-next-line no-new
     new Notification(title, options);
@@ -62,14 +80,18 @@ async function maybeNotify(schedule, notifiedSet) {
 
   // 予定時刻に到達（±1分）したら通知
   if (diff <= NOTIFICATION_WINDOW_MS && scheduledAt <= now) {
-    const permission = 'Notification' in window ? Notification.permission : 'denied';
-    if (permission !== 'granted') return;
+    // OneSignalの通知許可をチェック（v16対応でPromiseを返すため）
+    const permission = await checkNotificationPermission();
+    if (permission !== 'granted') {
+      console.log('通知許可がありません:', permission);
+      return;
+    }
 
     const bodyParts = [];
     if (description) bodyParts.push(description);
     if (location) bodyParts.push(`場所: ${location}`);
 
-    await showLocalNotification(title || 'スケジュール', {
+    await showNotification(title || 'スケジュール', {
       body: bodyParts.join('\n') || 'スケジュールの時間になりました',
       icon: '/logo192.png',
       badge: '/logo192.png',
@@ -84,6 +106,12 @@ async function maybeNotify(schedule, notifiedSet) {
 }
 
 export function startScheduleNotificationPolling() {
+  // OneSignal v16では初期化が非同期のため、OneSignalDeferredの存在をチェック
+  if (typeof window === 'undefined') {
+    console.warn('ブラウザ環境ではありません');
+    return () => {};
+  }
+  
   // HTTPSまたはlocalhostでのみ動作（通知権限が必要）
   if (!('Notification' in window)) return () => {};
   if (!(window.isSecureContext || window.location.hostname === 'localhost')) return () => {};

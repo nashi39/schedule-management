@@ -11,6 +11,18 @@
   ],
   "routes": [
     {
+      "src": "/sw\\.js",
+      "dest": "/sw.js"
+    },
+    {
+      "src": "/OneSignalSDKWorker\\.js",
+      "dest": "/OneSignalSDKWorker.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
       "src": "/static/(.*)",
       "dest": "/static/$1"
     },
@@ -21,6 +33,14 @@
     {
       "src": "/asset-manifest.json",
       "dest": "/asset-manifest.json"
+    },
+    {
+      "src": "/logo192.png",
+      "dest": "/logo192.png"
+    },
+    {
+      "src": "/logo512.png",
+      "dest": "/logo512.png"
     },
     {
       "src": "/manifest.json",

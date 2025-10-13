@@ -6,10 +6,22 @@ import ScheduleList from './components/ScheduleList';
 import ScheduleForm from './components/ScheduleForm';
 import Calendar from './components/Calendar';
 import NotificationPermission from './components/NotificationPermission';
+import OneSignalDebug from './components/OneSignalDebug';
 import { startScheduleNotificationPolling } from './utils/notificationScheduler';
+import { initializeOneSignal } from './config/onesignal';
 
 function App() {
   useEffect(() => {
+    // OneSignal SDKを初期化
+    const oneSignalInitialized = initializeOneSignal();
+    
+    if (oneSignalInitialized) {
+      console.log('OneSignal SDK初期化成功');
+    } else {
+      console.warn('OneSignal SDK初期化失敗');
+    }
+    
+    // 通知スケジューラーを開始
     const stop = startScheduleNotificationPolling();
     return () => stop && stop();
   }, []);
@@ -19,6 +31,7 @@ function App() {
       <div className="App">
         <Header />
         <NotificationPermission />
+        <OneSignalDebug />
         <main className="main-content">
           <Routes>
             <Route path="/" element={<ScheduleList />} />

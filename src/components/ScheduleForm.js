@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft } from 'lucide-react';
 import './ScheduleForm.css';
+import { getOneSignalUserId } from '../config/onesignal';
+import { schedulePushNotification } from '../utils/onesignalApi';
 
 const ScheduleForm = () => {
   const navigate = useNavigate();
@@ -87,7 +89,7 @@ const ScheduleForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -117,6 +119,29 @@ const ScheduleForm = () => {
     }
 
     localStorage.setItem('schedules', JSON.stringify(schedules));
+
+    // 予約通知をサーバー経由で作成（失敗しても保存は継続）
+    try {
+      const subscriptionId = await getOneSignalUserId();
+      const sendAfter = new Date(scheduleData.date);
+      const now = new Date();
+      if (subscriptionId && !Number.isNaN(sendAfter.getTime()) && sendAfter > now) {
+        const bodyParts = [];
+        if (scheduleData.description) bodyParts.push(scheduleData.description);
+        if (scheduleData.location) bodyParts.push(`場所: ${scheduleData.location}`);
+        await schedulePushNotification({
+          subscriptionId,
+          title: scheduleData.title || 'スケジュール',
+          message: bodyParts.join('\n') || 'スケジュールの時間になりました',
+          sendAfterISO: sendAfter.toISOString(),
+        });
+      }
+    } catch (err) {
+      // コンソールにのみ記録し、UXを阻害しない
+      // eslint-disable-next-line no-console
+      console.warn('予約通知の作成に失敗:', err);
+    }
+
     navigate('/');
   };
 

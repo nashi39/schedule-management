@@ -11,18 +11,7 @@ root.render(
   </React.StrictMode>
 );
 
-// Service Worker登録（HTTPS または localhost のみ）
-if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered: ', registration);
-      })
-      .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
-      });
-  });
-}
+// 独自sw.jsは未使用のため、登録を無効化（OneSignalのSWのみ使用）
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
