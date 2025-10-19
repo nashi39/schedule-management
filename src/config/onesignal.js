@@ -106,7 +106,8 @@ export async function sendNotification(title, message, opts = {}) {
   });
 }
 
-export default { initializeOneSignal, getOneSignalUserId, sendNotification };
+const oneSignalExports = { initializeOneSignal, getOneSignalUserId, sendNotification };
+export default oneSignalExports;
 // OneSignal設定ファイル
 export const ONESIGNAL_CONFIG = {
   // OneSignal App ID（環境に応じて切り替え）

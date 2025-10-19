@@ -1,6 +1,6 @@
 // OneSignal SDKを使用したスケジューラ: Web Push通知をサポート
 import { sendNotification, checkNotificationPermission } from '../config/onesignal';
-import { isSameDay, addDays, addWeeks, addMonths, addYears, isWithinInterval, isAfter, isBefore } from 'date-fns';
+import { isWithinInterval, isAfter, isBefore } from 'date-fns';
 
 const POLL_INTERVAL_MS = 30 * 1000; // 30秒ごとにチェック
 const NOTIFICATION_WINDOW_MS = 60 * 1000; // 1分以内の到達を通知
