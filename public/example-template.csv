@@ -1,2 +1,0 @@
-external_id,email,phone_number,subscribed,timezone_id,country,language,suppressed,data_tag_key
-123ABC,johndoe@example.com,+1-555-123-4567,yes,America/New_York,US,en,true,data_tag_value

@@ -34,14 +34,6 @@ export function initializeOneSignal() {
         const isVercelDev = currentHostname.includes('vercel.app') && currentHostname.includes('-');
         
         if (isLocalhost || isVercelDev) {
-          console.log('OneSignal: 開発環境のため初期化をスキップ', currentHostname);
-          window.OneSignalDebugInfo = {
-            initialized: false,
-            skipped: true,
-            reason: 'development environment',
-            hostname: currentHostname,
-            timestamp: new Date().toISOString()
-          };
           return false;
         }
 
@@ -51,23 +43,7 @@ export function initializeOneSignal() {
           notifyButton: { enable: true },
         });
 
-        // store debug info for OneSignalDebug component
-        window.OneSignalDebugInfo = {
-          initialized: true,
-          permission: Notification && Notification.permission,
-          userId: null,
-          timestamp: new Date().toISOString(),
-        };
-
-        // try to get user id if available
-        try {
-          const ids = await OneSignal.getUserId && OneSignal.getUserId();
-          window.OneSignalDebugInfo.userId = ids || null;
-        } catch (e) {
-          // ignore
-        }
       } catch (err) {
-        window.OneSignalDebugInfo = { initialized: false, error: err.message, timestamp: new Date().toISOString() };
         console.error('OneSignal init error', err);
       }
     });
@@ -188,24 +164,9 @@ export function initializeOneSignalV16() {
     const isVercelDev = currentHostname.includes('vercel.app') && currentHostname.includes('-');
     
     if (isLocalhost || isVercelDev) {
-      console.log('OneSignal: 開発環境のため初期化をスキップ', currentHostname);
-      window.OneSignalDebugInfo = {
-        initialized: false,
-        skipped: true,
-        reason: 'development environment',
-        hostname: currentHostname,
-        timestamp: new Date().toISOString()
-      };
       return false;
     }
 
-    console.log('🔧 OneSignal初期化開始...');
-    console.log('📱 App ID:', ONESIGNAL_CONFIG.appId);
-    console.log('🌐 環境:', {
-      isSecureContext: window.isSecureContext,
-      hostname: window.location.hostname,
-      protocol: window.location.protocol
-    });
 
     // 初期化フラグを設定
     window.OneSignalInitialized = true;
@@ -216,77 +177,34 @@ export function initializeOneSignalV16() {
       try {
         // 既にOneSignalが初期化されているかチェック
         if (OneSignal.User && OneSignal.User.PushSubscription) {
-          console.log('⚠️ OneSignal SDK は既に初期化されています');
-          
-          // 既存の状態を取得
-          const permission = await OneSignal.Notifications.permission;
-          const userId = await OneSignal.User.PushSubscription.id;
-          
-          window.OneSignalDebugInfo = {
-            initialized: true,
-            permission: permission,
-            userId: userId,
-            timestamp: new Date().toISOString()
-          };
           return true;
         }
-
-        console.log('🚀 OneSignal.init()実行中...');
         
-        // 本番環境用の設定（強制的に本番App IDを使用）
+        // 本番環境用の設定
         const initConfig = {
-          appId: 'a95b8d8a-b792-4c3a-a6c6-d2e88f5bc9dc', // 本番App IDを直接指定
+          appId: 'a95b8d8a-b792-4c3a-a6c6-d2e88f5bc9dc',
           safari_web_id: 'web.onesignal.auto.1f1e5b5b-9f41-4253-8171-f20d7e1a840b',
           notifyButton: { enable: true },
           allowLocalhostAsSecureOrigin: true,
         };
         
-        console.log('🌍 本番モードで初期化します');
-        
         await OneSignal.init(initConfig);
         
-        // 記事の方式に合わせて、初期化後にプロンプトを表示
+        // 初期化後にプロンプトを表示
         try {
           await OneSignal.Slidedown.promptPush();
-          console.log('📱 通知許可プロンプトを表示しました');
         } catch (error) {
-          console.log('⚠️ プロンプト表示エラー（既に許可済みの可能性）:', error);
+          // プロンプト表示エラーは無視
         }
-        
-        console.log('✅ OneSignal v16初期化成功');
-        
-        // 初期化後の状態をログ出力
-        const permission = await OneSignal.Notifications.permission;
-        const userId = await OneSignal.User.PushSubscription.id;
-        
-        console.log('📊 OneSignal状態:', {
-          permission: permission,
-          userId: userId,
-          isSubscribed: !!userId
-        });
-        
-        // グローバルに状態を保存（デバッグ用）
-        window.OneSignalDebugInfo = {
-          initialized: true,
-          permission: permission,
-          userId: userId,
-          timestamp: new Date().toISOString()
-        };
         
         return true;
       } catch (error) {
-        console.error('❌ OneSignal初期化エラー:', error);
-        window.OneSignalDebugInfo = {
-          initialized: false,
-          error: error.message,
-          timestamp: new Date().toISOString()
-        };
+        console.error('OneSignal初期化エラー:', error);
         return false;
       }
     });
     return true;
   }
-  console.warn('⚠️ ブラウザ環境ではありません');
   return false;
 }
 
@@ -294,8 +212,6 @@ export function initializeOneSignalV16() {
 export async function sendNotificationV16(title, message, data = {}) {
   return new Promise((resolve) => {
     if (typeof window !== 'undefined') {
-      console.log('🔔 本番モード通知送信:', title, message);
-      
       // 標準のNotification APIを使用（OneSignal v16では推奨）
       if ('Notification' in window) {
         if (Notification.permission === 'granted') {
@@ -306,7 +222,6 @@ export async function sendNotificationV16(title, message, data = {}) {
             tag: data.tag,
             data: data
           });
-          console.log('✅ 通知送信成功');
           resolve(true);
         } else if (Notification.permission === 'default') {
           Notification.requestPermission().then(permission => {
@@ -318,19 +233,15 @@ export async function sendNotificationV16(title, message, data = {}) {
                 tag: data.tag,
                 data: data
               });
-              console.log('✅ 通知送信成功（許可後）');
               resolve(true);
             } else {
-              console.log('❌ 通知許可が拒否されました');
               resolve(false);
             }
           });
         } else {
-          console.log('❌ 通知許可がありません');
           resolve(false);
         }
       } else {
-        console.log('❌ Notification APIがサポートされていません');
         resolve(false);
       }
     } else {
@@ -349,17 +260,13 @@ export function getOneSignalUserIdV16() {
           // v16では異なる方法で購読IDを取得
           const subscription = await OneSignal.User.PushSubscription;
           const userId = subscription ? subscription.id : null;
-          console.log('購読ID取得:', userId);
           resolve(userId);
         } catch (error) {
-          console.error('ユーザーID取得エラー:', error);
           // フォールバック: 直接window.OneSignalから取得を試行
           try {
             const fallbackId = window.OneSignal.getUserId ? window.OneSignal.getUserId() : null;
-            console.log('フォールバック購読ID:', fallbackId);
             resolve(fallbackId);
           } catch (fallbackError) {
-            console.error('フォールバック取得エラー:', fallbackError);
             resolve(null);
           }
         }

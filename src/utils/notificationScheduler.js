@@ -46,7 +46,6 @@ async function showNotification(title, options) {
     });
     
     if (success) {
-      console.log('OneSignal通知送信成功:', title);
       return;
     }
   } catch (error) {
@@ -152,7 +151,6 @@ async function maybeNotify(schedule, notifiedSet) {
   // OneSignalの通知許可をチェック（v16対応でPromiseを返すため）
   const permission = await checkNotificationPermission();
   if (permission !== 'granted') {
-    console.log('通知許可がありません:', permission);
     return;
   }
 
@@ -201,7 +199,6 @@ export function startScheduleNotificationPolling() {
   const currentHostname = window.location.hostname;
   const isVercelDev = currentHostname.includes('vercel.app') && currentHostname.includes('-');
   if (isVercelDev) {
-    console.log('通知スケジューラー: 開発環境のためスキップ', currentHostname);
     return () => {};
   }
 
