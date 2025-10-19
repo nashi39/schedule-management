@@ -197,6 +197,14 @@ export function startScheduleNotificationPolling() {
   if (!('Notification' in window)) return () => {};
   if (!(window.isSecureContext || window.location.hostname === 'localhost')) return () => {};
 
+  // 開発環境（Vercelプレビュー）では通知をスキップ
+  const currentHostname = window.location.hostname;
+  const isVercelDev = currentHostname.includes('vercel.app') && currentHostname.includes('-');
+  if (isVercelDev) {
+    console.log('通知スケジューラー: 開発環境のためスキップ', currentHostname);
+    return () => {};
+  }
+
   let timerId = null;
   const notifiedSet = loadNotifiedSet();
 

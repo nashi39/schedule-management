@@ -28,6 +28,23 @@ export function initializeOneSignal() {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async function(OneSignal) {
       try {
+        // ドメイン制限を回避するため、開発環境では初期化をスキップ
+        const currentHostname = window.location.hostname;
+        const isLocalhost = currentHostname === 'localhost' || currentHostname === '127.0.0.1';
+        const isVercelDev = currentHostname.includes('vercel.app') && currentHostname.includes('-');
+        
+        if (isLocalhost || isVercelDev) {
+          console.log('OneSignal: 開発環境のため初期化をスキップ', currentHostname);
+          window.OneSignalDebugInfo = {
+            initialized: false,
+            skipped: true,
+            reason: 'development environment',
+            hostname: currentHostname,
+            timestamp: new Date().toISOString()
+          };
+          return false;
+        }
+
         await OneSignal.init({
           appId: APP_ID,
           safari_web_id: SAFARI_WEB_ID,
@@ -163,6 +180,23 @@ export function initializeOneSignalV16() {
     if (window.OneSignalInitialized) {
       console.log('⚠️ OneSignalは既に初期化済みです');
       return true;
+    }
+
+    // ドメイン制限を回避するため、開発環境では初期化をスキップ
+    const currentHostname = window.location.hostname;
+    const isLocalhost = currentHostname === 'localhost' || currentHostname === '127.0.0.1';
+    const isVercelDev = currentHostname.includes('vercel.app') && currentHostname.includes('-');
+    
+    if (isLocalhost || isVercelDev) {
+      console.log('OneSignal: 開発環境のため初期化をスキップ', currentHostname);
+      window.OneSignalDebugInfo = {
+        initialized: false,
+        skipped: true,
+        reason: 'development environment',
+        hostname: currentHostname,
+        timestamp: new Date().toISOString()
+      };
+      return false;
     }
 
     console.log('🔧 OneSignal初期化開始...');
