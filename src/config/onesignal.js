@@ -156,7 +156,7 @@ export const ONESIGNAL_CONFIG = {
 };
 
 // OneSignalの初期化関数（v16対応）
-export function initializeOneSignal() {
+export function initializeOneSignalV16() {
   if (typeof window !== 'undefined') {
     // 既に初期化済みかチェック
     if (window.OneSignalInitialized) {
@@ -256,7 +256,7 @@ export function initializeOneSignal() {
 }
 
 // 通知の送信関数（本番環境用）
-export async function sendNotification(title, message, data = {}) {
+export async function sendNotificationV16(title, message, data = {}) {
   return new Promise((resolve) => {
     if (typeof window !== 'undefined') {
       console.log('🔔 本番モード通知送信:', title, message);
@@ -305,7 +305,7 @@ export async function sendNotification(title, message, data = {}) {
 }
 
 // ユーザーIDの取得（v16対応）
-export function getOneSignalUserId() {
+export function getOneSignalUserIdV16() {
   return new Promise((resolve) => {
     if (typeof window !== 'undefined') {
       window.OneSignalDeferred = window.OneSignalDeferred || [];

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, addDays, addWeeks, addMonths as addMonthsToDate, addYears, isWithinInterval, isAfter, isBefore } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import './Calendar.css';
@@ -21,10 +21,70 @@ const Calendar = () => {
   const monthEnd = endOfMonth(currentMonth);
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
+  // 繰り返しスケジュールの展開ロジック
+  const expandRecurringSchedule = (schedule, targetDate) => {
+    if (schedule.scheduleType !== 'recurring') return false;
+    
+    const startDate = new Date(schedule.date);
+    const endDate = new Date(schedule.recurringEndDate);
+    
+    // 対象日が期間外の場合は除外
+    if (isBefore(targetDate, startDate) || isAfter(targetDate, endDate)) {
+      return false;
+    }
+    
+    const daysDiff = Math.floor((targetDate - startDate) / (1000 * 60 * 60 * 24));
+    
+    switch (schedule.recurringType) {
+      case 'daily':
+        return daysDiff % schedule.recurringInterval === 0;
+      case 'weekly':
+        return daysDiff % (schedule.recurringInterval * 7) === 0;
+      case 'monthly':
+        // 月次は近似計算（より正確には日付の比較が必要）
+        const monthsDiff = Math.floor(daysDiff / 30);
+        return monthsDiff % schedule.recurringInterval === 0 && 
+               targetDate.getDate() === startDate.getDate();
+      case 'yearly':
+        // 年次は近似計算
+        const yearsDiff = Math.floor(daysDiff / 365);
+        return yearsDiff % schedule.recurringInterval === 0 &&
+               targetDate.getMonth() === startDate.getMonth() &&
+               targetDate.getDate() === startDate.getDate();
+      default:
+        return false;
+    }
+  };
+
+  // 期間指定スケジュールの判定
+  const isWithinPeriodSchedule = (schedule, targetDate) => {
+    if (schedule.scheduleType !== 'period') return false;
+    
+    const startDate = new Date(schedule.periodStartDate);
+    const endDate = new Date(schedule.periodEndDate);
+    
+    return isWithinInterval(targetDate, { start: startDate, end: endDate });
+  };
+
   const getSchedulesForDate = (date) => {
-    return schedules.filter(schedule => 
-      isSameDay(new Date(schedule.date), date)
-    );
+    return schedules.filter(schedule => {
+      // 単発スケジュール
+      if (schedule.scheduleType === 'single' || !schedule.scheduleType) {
+        return isSameDay(new Date(schedule.date), date);
+      }
+      
+      // 繰り返しスケジュール
+      if (schedule.scheduleType === 'recurring') {
+        return expandRecurringSchedule(schedule, date);
+      }
+      
+      // 期間指定スケジュール
+      if (schedule.scheduleType === 'period') {
+        return isWithinPeriodSchedule(schedule, date);
+      }
+      
+      return false;
+    });
   };
 
   const getSchedulesForSelectedDate = () => {
@@ -132,22 +192,54 @@ const Calendar = () => {
             {getSchedulesForSelectedDate().length === 0 ? (
               <p className="no-schedules">この日のスケジュールはありません</p>
             ) : (
-              getSchedulesForSelectedDate().map(schedule => (
-                <div key={schedule.id} className={`schedule-item ${getPriorityClass(schedule.priority)}`}>
-                  <div className="schedule-time">
-                    {format(new Date(schedule.date), 'HH:mm')}
+              getSchedulesForSelectedDate().map(schedule => {
+                const getScheduleTimeDisplay = () => {
+                  if (schedule.scheduleType === 'period') {
+                    return `${schedule.periodStartTime} - ${schedule.periodEndTime}`;
+                  } else if (schedule.scheduleType === 'recurring') {
+                    return format(new Date(schedule.date), 'HH:mm');
+                  } else {
+                    return format(new Date(schedule.date), 'HH:mm');
+                  }
+                };
+
+                const getScheduleTypeLabel = () => {
+                  switch (schedule.scheduleType) {
+                    case 'recurring':
+                      const recurringLabels = {
+                        daily: '日次',
+                        weekly: '週次',
+                        monthly: '月次',
+                        yearly: '年次'
+                      };
+                      return `🔄 ${recurringLabels[schedule.recurringType] || '繰り返し'}`;
+                    case 'period':
+                      return '📅 期間指定';
+                    default:
+                      return '';
+                  }
+                };
+
+                return (
+                  <div key={schedule.id} className={`schedule-item ${getPriorityClass(schedule.priority)}`}>
+                    <div className="schedule-time">
+                      {getScheduleTimeDisplay()}
+                    </div>
+                    <div className="schedule-content">
+                      <h4>{schedule.title}</h4>
+                      {getScheduleTypeLabel() && (
+                        <p className="schedule-type">{getScheduleTypeLabel()}</p>
+                      )}
+                      {schedule.description && (
+                        <p className="schedule-description">{schedule.description}</p>
+                      )}
+                      {schedule.location && (
+                        <p className="schedule-location">📍 {schedule.location}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="schedule-content">
-                    <h4>{schedule.title}</h4>
-                    {schedule.description && (
-                      <p className="schedule-description">{schedule.description}</p>
-                    )}
-                    {schedule.location && (
-                      <p className="schedule-location">📍 {schedule.location}</p>
-                    )}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
